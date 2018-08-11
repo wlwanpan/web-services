@@ -1,12 +1,22 @@
 package user
 
 import (
+	"net/http"
+
 	"github.com/gorilla/mux"
+	mgo "gopkg.in/mgo.v2"
 )
 
-func SetRoutes(r *mux.Router) {
+func UseDB(h AppHandler, db *mgo.Session) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		statusCode, err := h(db, w, r)
+		if err != nil {
+			http.Error(w, err.Error(), statusCode)
+		}
+	}
+}
 
-	r.HandleFunc("/unique-users", UserHandler).Methods("GET")
-	r.HandleFunc("/loyal-users", UserHandler).Methods("GET")
-
+func SetRoutes(r *mux.Router, db *mgo.Session) {
+	r.HandleFunc("/unique-users", UseDB(UniqueUserHandler, db)).Methods("GET")
+	r.HandleFunc("/loyal-users", UseDB(LoyalUserHandler, db)).Methods("GET")
 }

@@ -6,26 +6,41 @@ import (
 	"io"
 	"log"
 	"os"
-	"strconv"
 	"time"
 
+	"github.com/wlwanpan/web-services/parser"
 	"github.com/wlwanpan/web-services/user"
 	mgo "gopkg.in/mgo.v2"
 )
 
-// Converts a string to uint64.
-// If error in parsing, returns 0 and log the error
-func parseStrToUint(s string) uint64 {
-	parsedS, err := strconv.ParseUint(s, 10, 64)
+// Stores arr of errors for logging purposes
+type Errors struct {
+	errors []string
+	count  uint
+}
+
+// Check and add error, increment error count
+func (e *Errors) Add(err error) {
 	if err != nil {
-		log.Println("Error Parsing to Uint: ", s)
-		return 0
+		e.errors = append(e.errors, err.Error())
+		e.count++
 	}
-	return parsedS
+}
+
+// Log accumulated error msg to console
+func (e *Errors) Log() {
+	if e.count != 0 {
+		for _, err := range e.errors {
+			log.Println(err)
+		}
+	}
+	log.Println("Migration completed with %d errors", e.count)
 }
 
 // Migration function from .csv sample file to mongoDB
-func MigrateData(db *mgo.Session) error {
+func MigrateData(db *mgo.Session) {
+	errors := Errors{}
+	defer errors.Log()
 	dbSession := db.Copy()
 	defer dbSession.Close()
 
@@ -34,40 +49,27 @@ func MigrateData(db *mgo.Session) error {
 		filePath = "data.csv"
 	}
 
-	log.Println("Starting data migration from: ", filePath)
-
 	dataFile, err := os.Open(filePath)
-	if err != nil {
-		return err
-	}
-
+	errors.Add(err)
 	r := csv.NewReader(bufio.NewReader(dataFile))
 
+	log.Println("Starting data migration from: ", filePath)
 	for {
 		entry, err := r.Read()
-
 		if err == io.EOF {
 			break
-		}
-		if err != nil {
-			return err
-		}
-
-		parsedTime, err := time.Parse(time.UnixDate, entry[0])
-		if err != nil {
-			log.Println("Error Parsing time obj of User: ", entry[1])
-			parsedTime = time.Now()
+		} else {
+			errors.Add(err)
 		}
 
-		record := &user.User{
-			Datetime: parsedTime,
-			User:     parseStrToUint(entry[1]),
-			Os:       parseStrToUint(entry[2]),
-			Device:   parseStrToUint(entry[3]),
+		newRecord := &user.User{
+			Datetime: time.Unix(parser.StrToInt(entry[0]), 0),
+			User:     parser.StrToUint(entry[1]),
+			Os:       parser.StrToUint(entry[2]),
+			Device:   parser.StrToUint(entry[3]),
 		}
 
-		dbSession.DB("services").C("users").Insert(record)
+		log.Println("Inserting User: ", entry[1])
+		errors.Add(newRecord.Save(dbSession))
 	}
-
-	return nil
 }

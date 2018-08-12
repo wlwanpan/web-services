@@ -21,8 +21,8 @@ type (
 
 	// Query
 	CountQuery struct {
-		Os     int64
-		Device int64
+		Os     []int64
+		Device []int64
 		Unique bool
 	}
 )
@@ -33,17 +33,23 @@ func (u *User) Save(db *mgo.Session) error {
 
 func (q *CountQuery) Count(db *mgo.Session) int {
 	bsonM := bson.M{}
-	if q.Os != -1 {
-		bsonM["os"] = q.Os
+
+	if len(q.Os) != 0 {
+		bsonM["os"] = bson.M{"$in": q.Os}
 	}
-	if q.Device != -1 {
-		bsonM["device"] = q.Device
+	if len(q.Device) != 0 {
+		bsonM["device"] = bson.M{"$in": q.Device}
 	}
 
-	count, err := db.DB("").C(collection).Find(bsonM).Count()
-	if err != nil {
-		log.Println(err.Error())
-		return 0
+	if q.Unique == true {
+		var u []int
+		err := db.DB("").C(collection).Find(bsonM).Distinct("user", &u)
+		if err != nil {
+			log.Println(err.Error())
+			return 0
+		}
+		return len(u)
 	}
-	return count
+
+	return 0
 }

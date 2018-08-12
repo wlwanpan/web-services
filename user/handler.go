@@ -3,6 +3,7 @@ package user
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/wlwanpan/web-services/parser"
 	mgo "gopkg.in/mgo.v2"
@@ -22,16 +23,22 @@ type (
 
 type AppHandler func(db *mgo.Session, w http.ResponseWriter, r *http.Request) (int, error)
 
-func validateFilterQuery(s string) (int64, bool) {
+func validateFilterQuery(s string) ([]int64, bool) {
 	if s == "" {
-		return -1, true
+		return []int64{}, true
 	}
 
-	parsedInt := parser.StrToInt(s)
-	if parsedInt < 0 || parsedInt > 5 {
-		return 0, false
+	filterArr := []int64{}
+	splitStr := strings.Split(s, ",")
+
+	for _, str := range splitStr {
+		parsedInt := parser.StrToInt(str)
+		if parsedInt < 0 || parsedInt > 5 {
+			return []int64{}, false
+		}
+		filterArr = append(filterArr, parsedInt)
 	}
-	return parsedInt, true
+	return filterArr, true
 }
 
 func genQuery(db *mgo.Session, r *http.Request, uu bool) int {
@@ -39,18 +46,18 @@ func genQuery(db *mgo.Session, r *http.Request, uu bool) int {
 	reqDevice := reqQuery.Get("device")
 	reqOS := reqQuery.Get("os")
 
-	intDevice, valid := validateFilterQuery(reqDevice)
+	filterDevice, valid := validateFilterQuery(reqDevice)
 	if valid == false {
 		return 0
 	}
-	intOS, valid := validateFilterQuery(reqOS)
+	filterOS, valid := validateFilterQuery(reqOS)
 	if valid == false {
 		return 0
 	}
 
 	q := &CountQuery{
-		Os:     intOS,
-		Device: intDevice,
+		Os:     filterOS,
+		Device: filterDevice,
 		Unique: uu,
 	}
 

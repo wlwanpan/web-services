@@ -4,6 +4,7 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -13,19 +14,27 @@ import (
 )
 
 func main() {
-	port := ":" + *flag.String("p", "3001", "listening port")
-	dbAddr := *flag.String("db", "localhost", "mongodb addr")
+	port := os.Getenv("SERVER_ADDR")
+	if port == "" {
+		port = ":8080"
+	}
+	dbAddr := os.Getenv("DB_ADDR")
+	if dbAddr == "" {
+		dbAddr = "localhost"
+	}
 	runMigration := *flag.Bool("m", false, "migrate data before running server")
 
 	dbDialInfo := &mgo.DialInfo{
 		Addrs:    []string{dbAddr},
-		Database: "users", // to change to service
+		Timeout:  60 * time.Second,
+		Database: "service",
 	}
 
 	db, err := mgo.DialWithInfo(dbDialInfo)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+
 	if runMigration == true {
 		migration.MigrateData(db)
 	}
@@ -39,6 +48,6 @@ func main() {
 		ReadTimeout: 3 * time.Second,
 	}
 
-	log.Println("Server listening on port " + port)
+	log.Println("Server listening on " + port)
 	log.Fatal(server.ListenAndServe())
 }

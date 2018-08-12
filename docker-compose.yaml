@@ -1,0 +1,20 @@
+version: '2'
+services:
+  service:
+    build: .
+    container_name: web-service
+    depends_on:
+      - db
+    links:
+      - db
+    environment:
+      - SERVER_ADDR=0.0.0.0:8080
+      - DB_ADDR=db
+    ports:
+      - "8080:8080"
+  db:
+    image: mongo:3.3
+    container_name: service-db
+    command: mongod --smallfiles --quiet --logpath=/dev/null
+    ports:
+      - "27017:27017"

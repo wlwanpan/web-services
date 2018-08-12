@@ -19,7 +19,7 @@ type (
 		Device   uint64    `bson:"device"`
 	}
 
-	// Query
+	// Query struct holds converted params queries
 	CountQuery struct {
 		Os     []int64
 		Device []int64
@@ -27,10 +27,28 @@ type (
 	}
 )
 
+// Insert new user doc to users collection in mongodb
 func (u *User) Save(db *mgo.Session) error {
 	return db.DB("").C(collection).Insert(u)
 }
 
+// Filter and count unique users
+func uniqueCount(db *mgo.Session, q bson.M) int {
+	var users []int
+	err := db.DB("").C(collection).Find(q).Distinct("user", &users)
+	if err != nil {
+		log.Println(err.Error())
+		return 0
+	}
+	return len(users)
+}
+
+// Filter and count loyal (user visit > 9 within 1 month)
+func loyalCount(db *mgo.Session, q bson.M) int {
+	return 0
+}
+
+// Query wrapper
 func (q *CountQuery) Count(db *mgo.Session) int {
 	bsonM := bson.M{}
 
@@ -42,14 +60,7 @@ func (q *CountQuery) Count(db *mgo.Session) int {
 	}
 
 	if q.Unique == true {
-		var u []int
-		err := db.DB("").C(collection).Find(bsonM).Distinct("user", &u)
-		if err != nil {
-			log.Println(err.Error())
-			return 0
-		}
-		return len(u)
+		return uniqueCount(db, bsonM)
 	}
-
-	return 0
+	return loyalCount(db, bsonM)
 }

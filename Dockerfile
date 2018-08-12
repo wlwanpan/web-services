@@ -6,8 +6,8 @@ ADD . .
 RUN go get github.com/gorilla/mux
 RUN go get gopkg.in/mgo.v2
 
-RUN go build server.go
+RUN go build -o main .
 
-EXPOSE 80
+EXPOSE 8080
 
-CMD ["./server"]
+CMD ["./main"]

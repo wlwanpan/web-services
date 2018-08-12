@@ -8,8 +8,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/wlwanpan/web-services/parser"
-	"github.com/wlwanpan/web-services/user"
+	"github.com/wlwanpan/web-services/common"
+	"github.com/wlwanpan/web-services/users"
 	mgo "gopkg.in/mgo.v2"
 )
 
@@ -44,16 +44,11 @@ func MigrateData(db *mgo.Session) {
 	dbSession := db.Copy()
 	defer dbSession.Close()
 
-	filePath := os.Getenv("CSV_PATH")
-	if filePath == "" {
-		filePath = "data.csv"
-	}
-
-	dataFile, err := os.Open(filePath)
+	dataFile, err := os.Open("data.csv")
 	errors.Add(err)
 	r := csv.NewReader(bufio.NewReader(dataFile))
 
-	log.Println("Starting data migration from: ", filePath)
+	log.Println("Starting data migration ...")
 	for {
 		entry, err := r.Read()
 		if err == io.EOF {
@@ -63,13 +58,13 @@ func MigrateData(db *mgo.Session) {
 		}
 
 		newRecord := &user.User{
-			Datetime: time.Unix(parser.StrToInt(entry[0]), 0),
-			User:     parser.StrToUint(entry[1]),
-			Os:       parser.StrToUint(entry[2]),
-			Device:   parser.StrToUint(entry[3]),
+			Datetime: time.Unix(helper.StrToInt(entry[0]), 0),
+			User:     helper.StrToUint(entry[1]),
+			Os:       helper.StrToUint(entry[2]),
+			Device:   helper.StrToUint(entry[3]),
 		}
 
-		log.Println("Inserting User: ", entry[1])
+		log.Println("Inserting user: ", entry[1])
 		errors.Add(newRecord.Save(dbSession))
 	}
 }

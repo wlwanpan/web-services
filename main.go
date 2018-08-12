@@ -1,28 +1,22 @@
 package main
 
 import (
-	"flag"
 	"log"
 	"net/http"
-	"os"
+	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/wlwanpan/web-services/migration"
-	"github.com/wlwanpan/web-services/user"
+	"github.com/wlwanpan/web-services/common"
+	"github.com/wlwanpan/web-services/db"
+	"github.com/wlwanpan/web-services/users"
 	mgo "gopkg.in/mgo.v2"
 )
 
 func main() {
-	port := os.Getenv("SERVER_ADDR")
-	if port == "" {
-		port = ":8080"
-	}
-	dbAddr := os.Getenv("DB_ADDR")
-	if dbAddr == "" {
-		dbAddr = "localhost"
-	}
-	runMigration := *flag.Bool("m", false, "migrate data before running server")
+	serverAddr := helper.GetEnv("SERVER_ADDR", ":8080")
+	dbAddr := helper.GetEnv("DB_ADDR", "localhost")
+	migrate := helper.GetEnv("MIGRATE_ON_START", "false")
 
 	dbDialInfo := &mgo.DialInfo{
 		Addrs:    []string{dbAddr},
@@ -35,19 +29,20 @@ func main() {
 		log.Fatal(err.Error())
 	}
 
-	if runMigration == true {
-		migration.MigrateData(db)
+	runMigration, err := strconv.ParseBool(migrate)
+	if runMigration && err == nil {
+		go migration.MigrateData(db)
 	}
 
 	router := mux.NewRouter()
 	user.SetRoutes(router, db)
 
 	server := &http.Server{
-		Addr:        port,
+		Addr:        serverAddr,
 		Handler:     router,
-		ReadTimeout: 3 * time.Second,
+		ReadTimeout: 5 * time.Second,
 	}
 
-	log.Println("Server listening on " + port)
+	log.Println("Server listening on " + serverAddr)
 	log.Fatal(server.ListenAndServe())
 }

@@ -1,9 +1,17 @@
-package parser
+package helper
 
 import (
 	"log"
+	"os"
 	"strconv"
 )
+
+func GetEnv(k string, d string) string {
+	if value, ok := os.LookupEnv(k); ok {
+		return value
+	}
+	return d
+}
 
 func StrToUint(s string) uint64 {
 	parsedS, err := strconv.ParseUint(s, 10, 64)

@@ -1,15 +1,17 @@
 # Web Service
 
-## Mount
+## Mount and start
 ```bash
 docker-compose up -d
 ```
 
-## Migrate Data
+To import from data.csv upon start, set:
 ```bash
-docker exec -it web-service /bin/bash
-cd migration && go run migration.go
+MIGRATE_ON_START=true
 ```
+in the docker-compose file.
+
+Note: the data.csv need to be located at the root of the app.
 
 ## API
 

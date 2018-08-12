@@ -1,8 +1,8 @@
 version: '2'
 services:
-  service:
+  user_service:
     build: .
-    container_name: web-service
+    container_name: user-service
     depends_on:
       - db
     links:
@@ -10,6 +10,7 @@ services:
     environment:
       - SERVER_ADDR=0.0.0.0:8080
       - DB_ADDR=db
+      - MIGRATE_ON_START=true
     ports:
       - "8080:8080"
   db:

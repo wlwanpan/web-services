@@ -59,7 +59,7 @@ func (q *CountQuery) Count(db *mgo.Session) int {
 		bsonM["device"] = bson.M{"$in": q.Device}
 	}
 
-	if q.Unique == true {
+	if q.Unique {
 		return uniqueCount(db, bsonM)
 	}
 	return loyalCount(db, bsonM)

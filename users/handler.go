@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/wlwanpan/web-services/parser"
+	"github.com/wlwanpan/web-services/common"
 	mgo "gopkg.in/mgo.v2"
 )
 
@@ -32,7 +32,7 @@ func validateFilterQuery(s string) ([]int64, bool) {
 	splitStr := strings.Split(s, ",")
 
 	for _, str := range splitStr {
-		parsedInt := parser.StrToInt(str)
+		parsedInt := helper.StrToInt(str)
 		if parsedInt < 0 || parsedInt > 5 {
 			return []int64{}, false
 		}
@@ -47,11 +47,11 @@ func genQuery(db *mgo.Session, r *http.Request, uu bool) int {
 	reqOS := reqQuery.Get("os")
 
 	filterDevice, valid := validateFilterQuery(reqDevice)
-	if valid == false {
+	if !valid {
 		return 0
 	}
 	filterOS, valid := validateFilterQuery(reqOS)
-	if valid == false {
+	if !valid {
 		return 0
 	}
 

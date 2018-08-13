@@ -45,7 +45,25 @@ func uniqueCount(db *mgo.Session, q bson.M) int {
 
 // Filter and count loyal (user visit > 9 within 1 month)
 func loyalCount(db *mgo.Session, q bson.M) int {
-	return 0
+	var result []interface{}
+
+	pipeline := []bson.M{
+		bson.M{"$match": q},
+		bson.M{
+			"$group": bson.M{
+				"_id":      bson.M{"_id": "$user"},
+				"datetime": bson.M{},
+			},
+		},
+	}
+
+	err := db.DB("").C(collection).Pipe(pipeline).All(&result)
+	if err != nil {
+		log.Println(err.Error())
+		return 0
+	}
+
+	return len(result)
 }
 
 // Query wrapper

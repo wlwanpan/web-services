@@ -23,34 +23,36 @@ type (
 
 type AppHandler func(db *mgo.Session, w http.ResponseWriter, r *http.Request) (int, error)
 
-func validateFilterQuery(s string) ([]int64, bool) {
+// Check if filter value for device/os are valid.
+func validateFilterQuery(s string, upperLimit int64) ([]int64, bool) {
 	if s == "" {
 		return []int64{}, true
 	}
 
 	filterArr := []int64{}
 	splitStr := strings.Split(s, ",")
-
 	for _, str := range splitStr {
 		parsedInt := helper.StrToInt(str)
-		if parsedInt < 0 || parsedInt > 5 {
+		if parsedInt < 0 || parsedInt > upperLimit {
 			return []int64{}, false
 		}
 		filterArr = append(filterArr, parsedInt)
 	}
+
 	return filterArr, true
 }
 
-func genQuery(db *mgo.Session, r *http.Request, uu bool) int {
+// Generate a CountQuery from request and call count.
+func countQuery(db *mgo.Session, r *http.Request, uu bool) int {
 	reqQuery := r.URL.Query()
 	reqDevice := reqQuery.Get("device")
 	reqOS := reqQuery.Get("os")
 
-	filterDevice, valid := validateFilterQuery(reqDevice)
+	filterDevice, valid := validateFilterQuery(reqDevice, 5)
 	if !valid {
 		return 0
 	}
-	filterOS, valid := validateFilterQuery(reqOS)
+	filterOS, valid := validateFilterQuery(reqOS, 6)
 	if !valid {
 		return 0
 	}
@@ -65,7 +67,7 @@ func genQuery(db *mgo.Session, r *http.Request, uu bool) int {
 }
 
 func handlerHelper(option RespOptions, w http.ResponseWriter, r *http.Request) (int, error) {
-	count := genQuery(option.Db, r, option.Uu)
+	count := countQuery(option.Db, r, option.Uu)
 	resp := Resp{Count: count}
 	respJson, err := json.Marshal(resp)
 	if err != nil {
@@ -78,6 +80,7 @@ func handlerHelper(option RespOptions, w http.ResponseWriter, r *http.Request) (
 	return http.StatusOK, nil
 }
 
+// Handler for unique users request
 func UniqueUserHandler(db *mgo.Session, w http.ResponseWriter, r *http.Request) (int, error) {
 	option := RespOptions{
 		Db: db,
@@ -86,6 +89,7 @@ func UniqueUserHandler(db *mgo.Session, w http.ResponseWriter, r *http.Request) 
 	return handlerHelper(option, w, r)
 }
 
+// Handler for loyal users request
 func LoyalUserHandler(db *mgo.Session, w http.ResponseWriter, r *http.Request) (int, error) {
 	option := RespOptions{
 		Db: db,

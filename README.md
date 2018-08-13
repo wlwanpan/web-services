@@ -11,8 +11,7 @@ MIGRATE_ON_START=true
 ```
 in the docker-compose file.
 
-Note: the data.csv need to be located at the root of the app.
-
+Note: the data.csv need to be located at the root of the repo.
 ## API
 
 - Simple Queries
@@ -20,7 +19,7 @@ Note: the data.csv need to be located at the root of the app.
 curl localhost:8080/unique-users
 ```
 
-- Filters
+- With filters
 ```bash
 curl localhost:8080/unique-users?device=1,os=2
 ```

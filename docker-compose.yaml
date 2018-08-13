@@ -10,7 +10,7 @@ services:
     environment:
       - SERVER_ADDR=0.0.0.0:8080
       - DB_ADDR=db
-      - MIGRATE_ON_START=true
+      - MIGRATE_ON_START=false
     ports:
       - "8080:8080"
   db:

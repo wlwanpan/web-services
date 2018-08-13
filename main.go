@@ -28,6 +28,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+	db.DB("").C("users").EnsureIndexKey("user")
 
 	runMigration, err := strconv.ParseBool(migrate)
 	if runMigration && err == nil {

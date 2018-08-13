@@ -9,7 +9,7 @@ import (
 	mgo "gopkg.in/mgo.v2"
 )
 
-func Middleware(h AppHandler, db *mgo.Session) http.HandlerFunc {
+func middleware(h AppHandler, db *mgo.Session) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		startTime := time.Now()
 		defer func() {
@@ -24,6 +24,6 @@ func Middleware(h AppHandler, db *mgo.Session) http.HandlerFunc {
 }
 
 func SetRoutes(r *mux.Router, db *mgo.Session) {
-	r.HandleFunc("/unique-users", Middleware(UniqueUserHandler, db)).Methods("GET")
-	r.HandleFunc("/loyal-users", Middleware(LoyalUserHandler, db)).Methods("GET")
+	r.HandleFunc("/unique-users", middleware(UniqueUserHandler, db)).Methods("GET")
+	r.HandleFunc("/loyal-users", middleware(LoyalUserHandler, db)).Methods("GET")
 }
